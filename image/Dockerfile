@@ -52,7 +52,7 @@ ADD service /container/service
 
 # Use baseimage install-service script
 # https://github.com/osixia/docker-light-baseimage/blob/stable/image/tool/install-service
-RUN /container/tool/install-service
+RUN chmod -R 755 /container/service && /container/tool/install-service
 
 RUN set -x \
 # create nginx user/group first, to be consistent throughout docker variants
