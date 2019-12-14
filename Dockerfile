@@ -12,7 +12,7 @@ ADD run-new /container/tool/
 
 RUN set -x \
 # create nginx user/group first, to be consistent throughout docker variants
-    && chmod -R 755 /container/tool/ && /
+    && chmod -R 755 /container/tool/ \
     && addgroup -g 101 -S nginx \
     && adduser -S -D -H -u 101 -h /var/cache/nginx -s /sbin/nologin -G nginx -g nginx nginx \
     && apkArch="$(cat /etc/apk/arch)" \
