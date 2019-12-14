@@ -9,8 +9,8 @@ ENV NJS_VERSION     0.3.7
 ENV PKG_RELEASE     1~buster
 
 RUN set -x \
-    && apt-get update \
-    && apt-get install --no-install-recommends --no-install-suggests -y gnupg1 apt-transport-https apt-key ca-certificates \
+    && /usr/bin/apt-get update \
+    && /usr/bin/apt-get install --no-install-recommends --no-install-suggests -y gnupg1 apt-transport-https ca-certificates \
     && \
     NGINX_GPGKEY=573BFD6B3D8FBC641079A6ABABF5BD827BD9BF62; \
     found=''; \
@@ -21,10 +21,10 @@ RUN set -x \
         pgp.mit.edu \
     ; do \
         echo "Fetching GPG key $NGINX_GPGKEY from $server"; \
-        apt-key adv --no-tty --keyserver "$server" --keyserver-options timeout=10 --recv-keys "$NGINX_GPGKEY" && found=yes && break; \
+        /usr/bin/apt-key adv --no-tty --keyserver "$server" --keyserver-options timeout=10 --recv-keys "$NGINX_GPGKEY" && found=yes && break; \
     done; \
     test -z "$found" && echo >&2 "error: failed to fetch GPG key $NGINX_GPGKEY" && exit 1; \
-    apt-get remove --purge --auto-remove -y gnupg1 && rm -rf /var/lib/apt/lists/* \
+    /usr/bin/apt-get remove --purge --auto-remove -y gnupg1 && rm -rf /var/lib/apt/lists/* \
     && dpkgArch="$(dpkg --print-architecture)" \
     && nginxPackages=" \
         nginx=${NGINX_VERSION}-${PKG_RELEASE} \
@@ -37,7 +37,7 @@ RUN set -x \
         amd64|i386) \
 # arches officialy built by upstream
             echo "deb https://nginx.org/packages/debian/ stretch nginx" >> /etc/apt/sources.list.d/nginx.list \
-            && apt-get update \
+            && /usr/bin/apt-get update \
             ;; \
         *) \
 # we're on an architecture upstream doesn't officially build for
@@ -53,19 +53,19 @@ RUN set -x \
             && savedAptMark="$(apt-mark showmanual)" \
             \
 # build .deb files from upstream's source packages (which are verified by apt-get)
-            && apt-get update \
-            && apt-get build-dep -y $nginxPackages \
+            && /usr/bin/apt-get update \
+            && /usr/bin/apt-get build-dep -y $nginxPackages \
             && ( \
                 cd "$tempDir" \
                 && DEB_BUILD_OPTIONS="nocheck parallel=$(nproc)" \
-                    apt-get source --compile $nginxPackages \
+                    /usr/bin/apt-get source --compile $nginxPackages \
             ) \
 # we don't remove APT lists here because they get re-downloaded and removed later
             \
 # reset apt-mark's "manual" list so that "purge --auto-remove" will remove all build dependencies
 # (which is done after we install the built packages so we don't have to redownload any overlapping dependencies)
-            && apt-mark showmanual | xargs apt-mark auto > /dev/null \
-            && { [ -z "$savedAptMark" ] || apt-mark manual $savedAptMark; } \
+            && /usr/bin/apt-mark showmanual | xargs /usr/bin/apt-mark auto > /dev/null \
+            && { [ -z "$savedAptMark" ] || /usr/bin/apt-mark manual $savedAptMark; } \
             \
 # create a temporary local APT repo to install from (so that dependency resolution can be handled by APT, as it should be)
             && ls -lAFh "$tempDir" \
@@ -76,18 +76,18 @@ RUN set -x \
 #   Could not open file /var/lib/apt/lists/partial/_tmp_tmp.ODWljpQfkE_._Packages - open (13: Permission denied)
 #   ...
 #   E: Failed to fetch store:/var/lib/apt/lists/partial/_tmp_tmp.ODWljpQfkE_._Packages  Could not open file /var/lib/apt/lists/partial/_tmp_tmp.ODWljpQfkE_._Packages - open (13: Permission denied)
-            && apt-get -o Acquire::GzipIndexes=false update \
+            && /usr/bin/apt-get -o Acquire::GzipIndexes=false update \
             ;; \
     esac \
     \
-    && apt-get install --no-install-recommends --no-install-suggests -y \
+    && /usr/bin/apt-get install --no-install-recommends --no-install-suggests -y \
                         $nginxPackages \
                         gettext-base \
-    && apt-get remove --purge --auto-remove -y apt-transport-https ca-certificates && rm -rf /var/lib/apt/lists/* /etc/apt/sources.list.d/nginx.list \
+    && /usr/bin/apt-get remove --purge --auto-remove -y apt-transport-https ca-certificates && rm -rf /var/lib/apt/lists/* /etc/apt/sources.list.d/nginx.list \
     \
 # if we have leftovers from building, let's purge them (including extra, unnecessary build deps)
     && if [ -n "$tempDir" ]; then \
-        apt-get purge -y --auto-remove \
+        /usr/bin/apt-get purge -y --auto-remove \
         && rm -rf "$tempDir" /etc/apt/sources.list.d/temp.list; \
     fi
 
