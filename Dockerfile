@@ -8,8 +8,11 @@ ENV NGINX_VERSION 1.17.6
 ENV NJS_VERSION   0.3.7
 ENV PKG_RELEASE   1
 
+ADD run-new /container/tool/
+
 RUN set -x \
 # create nginx user/group first, to be consistent throughout docker variants
+    && chmod -R 755 /container/tool/ && /
     && addgroup -g 101 -S nginx \
     && adduser -S -D -H -u 101 -h /var/cache/nginx -s /sbin/nologin -G nginx -g nginx nginx \
     && apkArch="$(cat /etc/apk/arch)" \
@@ -109,4 +112,6 @@ EXPOSE 80
 
 STOPSIGNAL SIGTERM
 
-CMD ["nginx", "-g", "daemon off;"]
+
+
+ENTRYPOINT ["/container/tool/run-new"]
