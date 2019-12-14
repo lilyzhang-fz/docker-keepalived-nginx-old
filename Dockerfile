@@ -1,58 +1,12 @@
 # Use osixia/light-baseimage
 # sources: https://github.com/osixia/docker-light-baseimage
-FROM osixia/light-baseimage:alpine-0.1.6-dev
-
-# Keepalived version
-ARG KEEPALIVED_VERSION=2.0.19
+FROM osixia/keepalived:latest
 
 LABEL maintainer="NGINX Docker Maintainers <docker-maint@nginx.com>"
-ENV NGINX_VERSION   1.16.1
-ENV NJS_VERSION     0.3.5
+
+ENV NGINX_VERSION   1.17.6
+ENV NJS_VERSION     0.3.7
 ENV PKG_RELEASE     1~buster
-
-# Download, build and install Keepalived
-RUN apk --no-cache add \
-    autoconf \
-    curl \
-    gcc \
-    ipset \
-    ipset-dev \
-    iptables \
-    iptables-dev \
-    libnfnetlink \
-    libnfnetlink-dev \
-    libnl3 \
-    libnl3-dev \
-    make \
-    musl-dev \
-    openssl \
-    openssl-dev \
-    && curl -o keepalived.tar.gz -SL http://keepalived.org/software/keepalived-${KEEPALIVED_VERSION}.tar.gz \
-    && mkdir -p /container/keepalived-sources \
-    && tar -xzf keepalived.tar.gz --strip 1 -C /container/keepalived-sources \
-    && cd container/keepalived-sources \
-    && ./configure --disable-dynamic-linking \
-    && make && make install \
-    && cd - && mkdir -p /etc/keepalived \
-    && rm -f keepalived.tar.gz \
-    && rm -rf /container/keepalived-sources \
-    && apk --no-cache del \
-    autoconf \
-    gcc \
-    ipset-dev \
-    iptables-dev \
-    libnfnetlink-dev \
-    libnl3-dev \
-    make \
-    musl-dev \
-    openssl-dev
-
-# Add service directory to /container/service
-ADD service /container/service
-
-# Use baseimage install-service script
-# https://github.com/osixia/docker-light-baseimage/blob/stable/image/tool/install-service
-RUN chmod -R 755 /container/service && /container/tool/install-service
 
 RUN set -x \
 # create nginx user/group first, to be consistent throughout docker variants
@@ -85,13 +39,13 @@ RUN set -x \
     && case "$dpkgArch" in \
         amd64|i386) \
 # arches officialy built by upstream
-            echo "deb https://nginx.org/packages/debian/ buster nginx" >> /etc/apt/sources.list.d/nginx.list \
+            echo "deb https://nginx.org/packages/mainline/debian/ buster nginx" >> /etc/apt/sources.list.d/nginx.list \
             && apt-get update \
             ;; \
         *) \
 # we're on an architecture upstream doesn't officially build for
 # let's build binaries from the published source packages
-            echo "deb-src https://nginx.org/packages/debian/ buster nginx" >> /etc/apt/sources.list.d/nginx.list \
+            echo "deb-src https://nginx.org/packages/mainline/debian/ buster nginx" >> /etc/apt/sources.list.d/nginx.list \
             \
 # new directory for storing sources and .deb files
             && tempDir="$(mktemp -d)" \
@@ -144,11 +98,9 @@ RUN set -x \
 RUN ln -sf /dev/stdout /var/log/nginx/access.log \
     && ln -sf /dev/stderr /var/log/nginx/error.log
 
-# Add default env variables
-ADD environment /container/environment/99-default
-
 EXPOSE 80
 
 STOPSIGNAL SIGTERM
 
 CMD ["nginx", "-g", "daemon off;"]
+
